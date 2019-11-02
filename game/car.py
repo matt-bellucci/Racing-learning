@@ -1,10 +1,13 @@
-from math import cos, sin, sqrt, atan2
+import os
+import pygame
+from math import cos, sin, sqrt, atan2, degrees
 from numpy import sign, clip
 from pygame.math import Vector2
 from inputs import Inputs
 """
 This is derived from https://github.com/spacejack/carphysics2d which simulates accurately car physics in 2D but is in Javascript
 """
+
 
 class Car:
 	def __init__(self, heading, x, y):
@@ -29,6 +32,9 @@ class Car:
 		self.setConfig()
 
 		self.inputs = Inputs()
+
+		self.image = pygame.image.load(self.config.image_path).convert_alpha()
+		
 
 	def setConfig(self):
 		self.inertia = self.config.mass * self.config.inertiaScale
@@ -93,7 +99,7 @@ class Car:
 		self.accel.y = sn * self.accel_c.x + cs * self.accel_c.y
 
 		# update velocity
-		self.velocity.x += self.accel.x * dt
+		self.velocity.x += self.accel.x * dt 
 		self.velocity.y += self.accel.y * dt
 
 		self.absVel = self.velocity.length()
@@ -118,8 +124,71 @@ class Car:
 		self.position.x += self.velocity.x * dt
 		self.position.y += self.velocity.y * dt
 
+	def applySmoothSteer(self, steerInput, dt):
+		"""
+		Smooth steering, apply maximum steering angle change velocity.
+		Works only for analog input (values of steering between 0 and 1)
+		"""
+		steer = 0
+		
+		if abs(steerInput) > 0.001:
 
+			steer = clip(steer + steerInput * dt * 2., -1., 1.) # -inp.right, inp.left
 
+		else:
+			if steer > 0:
+				steer = max(steer - dt, 0)
+
+			elif steer < 0:
+				steer = min(steer + dt, 0)
+
+		return steer
+
+	def applySafeSteer(self, steerInput):
+		"""
+		Safe steering, limit the steering angle by the speed of the car.
+		Prevents oversteer at expense of more understeer
+		"""
+		avel = min(self.absVel, 250.) # m/s
+		steer = steerInput * (1. - (avel / 280.))
+		return steer
+
+	def update(self, dtms):
+		dt = dtms / 1000. # delta T in seconds
+		steerInput = self.inputs.left - self.inputs.right
+
+		# Perform filtering on steering
+		if self.config.smoothSteer:
+			steer = self.applySmoothSteer(steerInput, dt)
+		else:
+			steer = steerInput
+
+		if self.config.safeSteer:
+			steer = self.applySafeSteer(steerInput)
+
+		# Now set the actual steering angle
+		self.steerAngle = steer * self.config.maxSteer
+
+		# Now that the inputs have been filtered and we have our throttle,
+		# brake and steering values, perform the car physics update
+
+		self.updatePhysics(dt)
+
+	def render(self):
+		cfg = self.config
+		surface = self.image
+		
+		# print(degrees(self.heading))
+		return surface
+
+	def getStats(self):
+		statsLabel = ["Speed", "acceleration", "yawRate", "Heading"]
+		stats = [round(self.velocity_c.x * 3.6), round(self.accel_c.x), round(self.yawRate), round(degrees(self.heading))]
+		text = ""
+		for i in range(len(stats)):
+			text += statsLabel[i] + ": "
+			text += str(stats[i]) + " "
+		return text
 
 class Config:
 	"""
@@ -130,7 +199,7 @@ class Config:
 		self.gravity = 9.81 # m/s^2
 		self.mass = 1200.0 # kg
 		self.inertiaScale = 1.0 # multiply by mass for inertia
-		self.halfWidth = 0.8 # centre so side of chassis (metres)
+		self.halfWidth = 0.8 # centre to side of chassis (metres)
 		self.cgToFront = 2.0 # centre of gravity to front of chassis (metres)
 		self.cgToRear = 2.0 # centre of gravity to rear of chassis (metres)
 		self.cgToFrontAxle = 1.25 # centre gravity to front axle
@@ -149,6 +218,9 @@ class Config:
 		self.cornerStiffnessRear = 5.2
 		self.airResist = 2.5 # air resistance ( * vel )
 		self.rollResist = 8. # rolling resistance force ( * vel )
+		self.safeSteer = False
+		self.smoothSteer = True
+		self.image_path = os.path.split(os.getcwd())[0] + "\\resources\\car.png"
 
 def main():
 	foo = Car(0.,0,0)

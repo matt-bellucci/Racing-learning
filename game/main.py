@@ -4,16 +4,36 @@ from pygame.locals import *
 import math
 from car import Car
 
-screen_size = (1024,768)
+pygame.init()
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0) 
+BLUE = (0, 0, 128) 
+FPS = 60
+screen_size = (2000,100)
+
+
+
 screen = pygame.display.set_mode(screen_size)
-screen.fill((0,192,0))
-car = Car(0.,0,0)
 clock = pygame.time.Clock()
+
+font = pygame.font.SysFont("comicsansms", 40)
+
+
+car = Car(0.,0,0)
 running = True
 while running:
-	clock.tick(24)
-	frames = 0
-	frames += 1
+	dtms = clock.tick(FPS)
 	pygame.display.flip()
 	running = car.inputs.update()
-	car.updatePhysics(1)
+	renderedText = car.getStats()
+	text = font.render(renderedText, True, (0, 128, 0))
+	car.update(dtms)
+	surface = car.render()
+	rect_center = surface.get_rect().center
+	print(rect_center)
+	surface = pygame.transform.rotate(surface, -math.degrees(car.heading))
+	screen.fill(BLACK)
+	screen.blit(surface, (car.position.x, car.position.y))
+	screen.blit(text, (0,0))
+	pygame.display.update()

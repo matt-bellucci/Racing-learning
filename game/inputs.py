@@ -23,27 +23,18 @@ class Inputs:
 		self.reset()
 		key = pygame.key.get_pressed()
 
+		if key[pygame.K_UP] != 0:
+			self.throttle += 1.
+		if key[pygame.K_DOWN] != 0:
+			self.brake += 1.
+		if key[pygame.K_LEFT] != 0:
+			self.left += 1.
+		if key[pygame.K_RIGHT] != 0:
+			self.right += 1.
+		if key[pygame.K_SPACE] != 0:
+			self.ebrake += 1.
+
 		for event in pygame.event.get():
-
-			if event.type == pygame.KEYDOWN:
-
-				if event.key == pygame.K_UP:
-					self.throttle += 1.
-
-				if event.key == pygame.K_DOWN:
-					self.brake = 1.
-
-				if event.key == pygame.K_LEFT:
-					self.left = 1.
-
-				if event.key == pygame.K_RIGHT:
-					self.right = 1.
-
-				if event.key == pygame.K_SPACE:
-					self.ebrake = 1.
-
-				self.display()
-
 			if event.type == pygame.QUIT:
 				print("Stop")
 				return False
