@@ -34,13 +34,15 @@ class Car:
 		self.inputs = Inputs()
 
 		self.image = pygame.image.load(self.config.image_path).convert_alpha()
-		
+		self.image = pygame.transform.scale(self.image,
+		 (32, 16))
 
 	def setConfig(self):
 		self.inertia = self.config.mass * self.config.inertiaScale
 		self.wheelBase = self.config.cgToFrontAxle + self.config.cgToRearAxle
 		self.axleWeightRatioFront = self.config.cgToRearAxle / self.wheelBase # % car weight on front axle
 		self.axleWeightRatioRear = self.config.cgToFrontAxle / self.wheelBase # % car weight on rear axle
+
 
 	def updatePhysics(self, dt):
 
@@ -99,7 +101,7 @@ class Car:
 		self.accel.y = sn * self.accel_c.x + cs * self.accel_c.y
 
 		# update velocity
-		self.velocity.x += self.accel.x * dt 
+		self.velocity.x += self.accel.x * dt
 		self.velocity.y += self.accel.y * dt
 
 		self.absVel = self.velocity.length()
@@ -155,7 +157,7 @@ class Car:
 
 	def update(self, dtms):
 		dt = dtms / 1000. # delta T in seconds
-		steerInput = self.inputs.left - self.inputs.right
+		steerInput = self.inputs.right - self.inputs.left
 
 		# Perform filtering on steering
 		if self.config.smoothSteer:
@@ -178,7 +180,6 @@ class Car:
 		cfg = self.config
 		surface = self.image
 		
-		# print(degrees(self.heading))
 		return surface
 
 	def getStats(self):
@@ -197,7 +198,7 @@ class Config:
 	"""
 	def __init__(self):
 		self.gravity = 9.81 # m/s^2
-		self.mass = 1200.0 # kg
+		self.mass = 1000.0 # kg
 		self.inertiaScale = 1.0 # multiply by mass for inertia
 		self.halfWidth = 0.8 # centre to side of chassis (metres)
 		self.cgToFront = 2.0 # centre of gravity to front of chassis (metres)
@@ -208,12 +209,12 @@ class Config:
 		self.wheelRadius = 0.3 # includes tire and represents height of axle
 		# self.wheelWidth = 0.2 # for render only
 		self.tireGrip = 2. # How much grip tires have
-		self.lockGrip = 0.7 # % of grip available when wheel is locked
-		self.engineForce = 8000.
-		self.brakeForce = 12000.
+		self.lockGrip = 0.9 # % of grip available when wheel is locked
+		self.engineForce = 12000.
+		self.brakeForce = 14000.
 		self.eBrakeForce = self.brakeForce / 2.5
 		self.weightTransfer = 0.2 # How much weight is transferred during acceleration/braking
-		self.maxSteer = 0.6 # maximum steering angle in radians
+		self.maxSteer = 3.14 # maximum steering angle in radians
 		self.cornerStiffnessFront = 5.
 		self.cornerStiffnessRear = 5.2
 		self.airResist = 2.5 # air resistance ( * vel )
