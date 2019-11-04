@@ -5,21 +5,7 @@ import math
 from car import Car
 
 TRACK_GREY = (108,108,108,255)
-def rotate(surface, angle, pivot, offset):
-    """Rotate the surface around the pivot point.
-
-    Args:
-        surface (pygame.Surface): The surface that is to be rotated.
-        angle (float): Rotate by this angle.
-        pivot (tuple, list, pygame.math.Vector2): The pivot point.
-        offset (pygame.math.Vector2): This vector is added to the pivot.
-    """
-    rotated_image = pygame.transform.rotozoom(surface, -angle, 1)  # Rotate the image.
-    rotated_offset = offset.rotate(angle)  # Rotate the offset vector.
-    # Add the offset vector to the center/pivot point to shift the rect.
-    rect = rotated_image.get_rect(center=pivot+rotated_offset)
-    return rotated_image, rect  # Return the rotated image and shifted rect.
-
+START_POINT = pygame.Vector2(455,237)
 def collides(position, circuit, inColor=TRACK_GREY):
 	return not circuit.get_at((round(position.x), round(position.y))) == inColor
 
@@ -50,7 +36,7 @@ def distanceToCollision(position, circuit, direction, checkDistance=1, precision
 			endPos = midPos
 		i += 1
 	midPos = (endPos+startPos)/2
-	print(midPos)
+	# print(midPos)
 	m = [int(midPos.x), int(midPos.y)]
 	return m, dist(position, midPos)
 
@@ -73,7 +59,7 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont("comicsansms", 40)
 
 
-car = Car(0.,0,0)
+car = Car(0.,START_POINT)
 running = True
 while running:
 	dtms = clock.tick(FPS)
@@ -95,4 +81,5 @@ while running:
 	m, d = distanceToCollision(car.position, circuit, pygame.Vector2(1,0).rotate(math.degrees(car.heading)))
 	pygame.draw.circle(screen, GREEN, m, 10)
 	screen.blit(text, (0,0))
+	print(car.position)
 	pygame.display.flip()
