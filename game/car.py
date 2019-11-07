@@ -4,6 +4,7 @@ from math import cos, sin, sqrt, atan2, degrees
 from numpy import sign, clip
 from pygame.math import Vector2
 from inputs import Inputs
+from constants import Config
 """
 This is derived from https://github.com/spacejack/carphysics2d which simulates accurately car physics in 2D but is in Javascript
 """
@@ -43,6 +44,16 @@ class Car:
 		self.axleWeightRatioFront = self.config.cgToRearAxle / self.wheelBase # % car weight on front axle
 		self.axleWeightRatioRear = self.config.cgToFrontAxle / self.wheelBase # % car weight on rear axle
 
+	def getCarDict(self):
+		car_stats = {"heading" : self.heading,
+					 "position" : self.position,
+					 "velocity" : self.velocity,
+					 "acceleration" : self.accel,
+					 "speed" : self.absVel,
+					 "yawRate" : self.yawRate,
+					 "steer" : self.steer,
+					 "steerAngle" : self.steerAngle}
+		return car_stats
 
 	def updatePhysics(self, dt):
 
@@ -191,37 +202,7 @@ class Car:
 			text += str(stats[i]) + " "
 		return text
 
-class Config:
-	"""
-	This class contains all the constants for the car and the world, for interesting results,
-	some constants could be modified or randomized
-	"""
-	def __init__(self):
-		self.gravity = 9.81 # m/s^2
-		self.mass = 1000.0 # kg
-		self.inertiaScale = 1.0 # multiply by mass for inertia
-		self.halfWidth = 0.8 # centre to side of chassis (metres)
-		self.cgToFront = 2.0 # centre of gravity to front of chassis (metres)
-		self.cgToRear = 2.0 # centre of gravity to rear of chassis (metres)
-		self.cgToFrontAxle = 1.25 # centre gravity to front axle
-		self.cgToRearAxle = 1.25 # centre gravity to rear axle
-		self.cgHeight = 0.55 # centre gravity height
-		self.wheelRadius = 0.3 # includes tire and represents height of axle
-		# self.wheelWidth = 0.2 # for render only
-		self.tireGrip = 2. # How much grip tires have
-		self.lockGrip = 0.9 # % of grip available when wheel is locked
-		self.engineForce = 12000.
-		self.brakeForce = 14000.
-		self.eBrakeForce = self.brakeForce / 2.5
-		self.weightTransfer = 0.2 # How much weight is transferred during acceleration/braking
-		self.maxSteer = 3.14 # maximum steering angle in radians
-		self.cornerStiffnessFront = 5.
-		self.cornerStiffnessRear = 5.2
-		self.airResist = 2.5 # air resistance ( * vel )
-		self.rollResist = 8. # rolling resistance force ( * vel )
-		self.safeSteer = False
-		self.smoothSteer = True
-		self.image_path = os.path.split(os.getcwd())[0] + "\\resources\\car.png"
+
 
 def main():
 	foo = Car(0.,0,0)

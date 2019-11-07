@@ -6,18 +6,10 @@ from car import Car
 from constants import *
 import utils
 
-
-
-
-
 pygame.init()
 
 screen = pygame.display.set_mode(screen_size)
-circuit = pygame.image.load(MAP_PATH).convert_alpha()
 clock = pygame.time.Clock()
-
-font = pygame.font.SysFont("comicsansms", 40)
-
 
 car = Car(0.,START_POINT)
 running = True
