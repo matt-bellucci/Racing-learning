@@ -1,6 +1,7 @@
 import os
 import pygame
 
+pygame.font.init()
 TRACK_GREY = (108,108,108,255)
 START_POINT = pygame.math.Vector2(455,237)
 BLACK = (0, 0, 0)
@@ -10,8 +11,12 @@ BLUE = (0, 0, 128)
 FPS = 60
 screen_size = (1024,768)
 MAP_PATH = os.path.split(os.getcwd())[0] + "\\resources\\map.png"
-circuit = pygame.image.load(MAP_PATH).convert_alpha()
+
 font = pygame.font.SysFont("comicsansms", 40)
+
+def load_circuit():
+	circuit = pygame.image.load(MAP_PATH).convert_alpha()
+	return circuit
 
 class Config:
 	"""

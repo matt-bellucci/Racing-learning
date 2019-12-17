@@ -2,15 +2,16 @@ import os
 import pygame
 from pygame.locals import *
 import math
-from car import Car
 from constants import *
+from car import Car
 import utils
 
+
 pygame.init()
-
 screen = pygame.display.set_mode(screen_size)
-clock = pygame.time.Clock()
+circuit = load_circuit()
 
+clock = pygame.time.Clock()
 car = Car(0.,START_POINT)
 running = True
 while running:
