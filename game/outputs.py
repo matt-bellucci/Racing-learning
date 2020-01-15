@@ -7,6 +7,7 @@ class Outputs:
 
 
 	def __init__(self, car_data_fields, sensor_vectors):
+
 		"""
 		car_data : liste de string des donnees a recuperer de la voiture (comme la vitesse etc)
 		sensor_vectors : liste des directions des capteurs pour detecter la distance a la prochaine collision
@@ -17,6 +18,7 @@ class Outputs:
 		self.collision_distances = []
 		self.car_outputs = []
 		self.outputs = []
+		self.score = 0
 
 	def get_collision_distances(self, car):
 

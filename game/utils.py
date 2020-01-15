@@ -34,6 +34,9 @@ def distanceToCollision(position, circuit, direction, checkDistance=1, precision
 	m = [int(midPos.x), int(midPos.y)]
 	return m, dist(position, midPos)
 
-def collides(position, circuit, inColor=TRACK_GREY):
-	return not circuit.get_at((round(position.x), round(position.y))) == inColor
+def collides(position, circuit, inCircuitColors=[TRACK_GREY, RED, GREEN]):
+	return not circuit.get_at((round(position.x), round(position.y))) in inCircuitColors
+
+def onCheckpoint(position, circuit, checkpointColor=GREEN):
+	return circuit.get_at((round(position.x), round(position.y))) == checkpointColor
 
