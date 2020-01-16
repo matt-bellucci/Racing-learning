@@ -11,7 +11,8 @@ BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 FPS = 60
 screen_size = (1024,768)
-MAP_PATH = os.path.split(os.getcwd())[0] + "\\resources\\map.png"
+sep = os.path.sep
+MAP_PATH = os.path.split(os.getcwd())[0] + sep+"resources"+sep+"map.png"
 
 font = pygame.font.SysFont("comicsansms", 40)
 
@@ -49,4 +50,4 @@ class Config:
 		self.rollResist = 8. # rolling resistance force ( * vel )
 		self.safeSteer = False
 		self.smoothSteer = True
-		self.image_path = os.path.split(os.getcwd())[0] + "\\resources\\car.png"
+		self.image_path = os.path.split(os.getcwd())[0] + sep+"resources"+sep+"car.png"
