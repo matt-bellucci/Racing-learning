@@ -38,5 +38,6 @@ def collides(position, circuit, inCircuitColors=[TRACK_GREY, RED, GREEN]):
 	return not circuit.get_at((int(round(position.x)), int(round(position.y)))) in inCircuitColors
 
 def onCheckpoint(position, circuit, checkpointColor=GREEN):
+	# print(circuit.get_at((int(round(position.x)), int(round(position.y)))))
 	return circuit.get_at((int(round(position.x)), int(round(position.y)))) == checkpointColor
 

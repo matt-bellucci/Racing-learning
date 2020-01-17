@@ -5,48 +5,23 @@ import math
 from constants import *
 from car import Car
 import utils
-
+from circuit import Circuit
+from game_loops import game_loop
 #TODO gestion score par voiture
 
 pygame.init()
 screen = pygame.display.set_mode(screen_size)
-circuit = load_circuit()
-
+circuit = Circuit()
+circuit.display()
 clock = pygame.time.Clock()
 car = Car(0.,START_POINT)
 running = True
-vectors = [pygame.Vector2(0.5,0.232132515)]
-print(vectors)
-
+vectors = [pygame.Vector2(1,0.)]
+score = 0
+checkpoint = 0
 while running:
 
-	dtms = clock.tick(FPS)
-	pygame.display.flip()
-	running = car.inputs.update()
-	renderedText = car.getStats()
-	text = font.render(renderedText, True, (0, 128, 0))
-	car.update(dtms)
-
-
-	surface = car.render()
-	surface = pygame.transform.rotate(surface, -math.degrees(car.heading))
-	rot_rect = surface.get_rect()
-	rot_rect.move(car.position.x, car.position.y)
-	# surface_2, rect = rotate(surface, car.heading, pivot, offset)
-	screen.fill(BLACK)
-	screen.blit(circuit, (0,0))
-	pygame.draw.rect(screen, GREEN, surface.get_rect())
-	screen.blit(surface, (car.position.x, car.position.y))
-	screen.blit(surface, car.position)
-	for vector in vectors:
-		m, d = utils.distanceToCollision(car.position, circuit, 	vector.rotate(math.degrees(car.heading)))
-		pygame.draw.circle(screen, GREEN, m, 10)
-	screen.blit(text, (0,0))
-
-	onCheck = utils.onCheckpoint(car.position, circuit)
-	if onCheck:
-		continue
-
-	print(utils.collides(car.position, circuit))
-	print(car.position)
-	pygame.display.flip()
+	running, score_update, checkpoint = game_loop(screen, clock, car, vectors, circuit, checkpoint=checkpoint,
+		render=True)
+	score += score_update
+	print("Score = ", score)
