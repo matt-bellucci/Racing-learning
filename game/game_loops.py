@@ -6,14 +6,23 @@ from constants import *
 from car import Car
 from circuit import Circuit
 import utils
-def game_loop(screen, clock, car, vectors, circuit, checkpoint=0, render=True):
+
+def agent_inputs(vectors, car, circuit_img):
+	vectors_distance = [utils.distanceToCollision(car.position,
+	 circuit_img, vector.rotate(math.degrees(car.heading)))[1] for vector in vectors]
+	car_data = [car.absVel, car.accel[0], car.accel[1]]
+
+	return car_data + vectors_distance
+
+
+def game_loop(screen, clock, car, vectors, circuit, is_ai=True, checkpoint=0, render=True):
 	dtms = clock.tick(FPS)
 	circuit_img = circuit.get_nth_checkpoint(checkpoint)
 	score_update = 0
 	if render:
 		pygame.display.flip()
-
-	running = car.inputs.update()
+	if not is_ai:
+		running = car.inputs.update()
 	renderedText = car.getStats()
 	text = font.render(renderedText, True, (0, 128, 0))
 
