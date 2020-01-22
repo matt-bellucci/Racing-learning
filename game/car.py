@@ -1,5 +1,6 @@
 import os
 import pygame
+import copy
 from math import cos, sin, sqrt, atan2, degrees
 from numpy import sign, clip
 from pygame.math import Vector2
@@ -13,8 +14,8 @@ This is derived from https://github.com/spacejack/carphysics2d which simulates a
 class Car:
 	def __init__(self, heading, position):
 
-		self.heading = 0.0 # angle in radians
-		self.position = position # metres worlds coords
+		self.heading = copy.deepcopy(heading)# angle in radians
+		self.position = copy.deepcopy(position) # metres worlds coords
 		self.velocity = Vector2() # m/s world coords
 		self.velocity_c = Vector2() # m/s local coords, x is forward, y is sideways
 		self.accel = Vector2() # acceleration in world coords
