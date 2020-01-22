@@ -36,9 +36,19 @@ class Inputs:
 
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
-				print("Stop")
+				# print("Stop")
 				return False
 		return True
+
+	def list_to_inputs(list):
+		inp = Input()
+		inp.left = liste[0]
+		inp.right = liste[1]
+		inp.throttle = liste[2]
+		inp.brake = liste[3]
+		inp.ebrake = liste[4]
+		return inp
+
 
 	def display(self):
 		print("Left = {}\nRight = {}\nThrottle = {}\nBrake = {}\nEBrake = {}"

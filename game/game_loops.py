@@ -15,12 +15,12 @@ def agent_inputs(vectors, car, circuit_img):
 	return car_data + vectors_distance
 
 
-def game_loop(screen, clock, car, vectors, circuit, is_ai=True, checkpoint=0, render=True):
+def game_loop(screen, clock, car, vectors, circuit, is_ai=True, checkpoint=0, render_car=True,
+ render_circuit=False):
 	dtms = clock.tick(FPS)
 	circuit_img = circuit.get_nth_checkpoint(checkpoint)
 	score_update = 0
-	if render:
-		pygame.display.flip()
+		
 	if not is_ai:
 		running = car.inputs.update()
 	renderedText = car.getStats()
@@ -32,18 +32,19 @@ def game_loop(screen, clock, car, vectors, circuit, is_ai=True, checkpoint=0, re
 	surface = pygame.transform.rotate(surface, -math.degrees(car.heading))
 	rot_rect = surface.get_rect()
 	rot_rect.move(car.position.x, car.position.y)
-	if render:
-		screen.fill(BLACK)
-		screen.blit(circuit_img, (0,0))
-		pygame.draw.rect(screen, GREEN, surface.get_rect())
-		screen.blit(surface, (car.position.x, car.position.y))
-		screen.blit(surface, car.position)
-		screen.blit(text, (0,0))
+	if render_car or render_circuit:
+		if render_circuit:
+			screen.blit(circuit_img, (0,0))
+		#pygame.draw.rect(screen, GREEN, surface.get_rect())
+		if render_car:
+			screen.blit(surface, (car.position.x, car.position.y))
+			screen.blit(surface, car.position)
+		# screen.blit(text, (0,0))
 
 	for vector in vectors:
 		m, d = utils.distanceToCollision(car.position, circuit_img, vector.rotate(math.degrees(car.heading)))
-		if render:
-			pygame.draw.circle(screen, GREEN, m, 10)
+		# if render:
+		# 	pygame.draw.circle(screen, GREEN, m, 10)
 	
 
 	onCheck = utils.onCheckpoint(car.position, circuit_img)
@@ -58,8 +59,7 @@ def game_loop(screen, clock, car, vectors, circuit, is_ai=True, checkpoint=0, re
 
 	# print(utils.collides(car.position, circuit_img))
 	# print(car.position)
-	if render:
-		pygame.display.flip()
+		
 	score_update -= dtms*SCORE_DECAY + out_of_circuit * DIE_PENALTY
 	return running, score_update, checkpoint
 
