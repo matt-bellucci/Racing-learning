@@ -7,6 +7,7 @@ from car import Car
 from circuit import Circuit
 import utils
 
+INPUT_LEN_CAR = 3
 def agent_inputs(vectors, car, circuit_img):
 	vectors_distance = [utils.distanceToCollision(car.position,
 	 circuit_img, vector.rotate(math.degrees(car.heading)))[1] for vector in vectors]
@@ -62,4 +63,8 @@ def game_loop(screen, clock, car, vectors, circuit, is_ai=True, checkpoint=0, re
 		
 	score_update -= dtms*SCORE_DECAY + out_of_circuit * DIE_PENALTY
 	return running, score_update, checkpoint
+def get_input_size(vectors):
+	circuit_img = pygame.Surface((1,1))
+	car = Car(0,pygame.Vector2(0.,0.))
+	return len(agent_inputs(vectors, car, circuit_img))
 

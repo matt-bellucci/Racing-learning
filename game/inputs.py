@@ -53,6 +53,7 @@ class Inputs:
 	def display(self):
 		print("Left = {}\nRight = {}\nThrottle = {}\nBrake = {}\nEBrake = {}"
 			.format(self.left, self.right, self.throttle, self.brake, self.ebrake))
-
+	def size():
+		return 5
 
 
