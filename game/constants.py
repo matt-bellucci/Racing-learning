@@ -13,6 +13,7 @@ FPS = 60
 CP_REWARD = 10 # reward when crossing a checkpoint
 SCORE_DECAY = 1/1000 # score decay per millisecond in circuit
 DIE_PENALTY = 100
+MAX_FRAMES_PENALTY = 500
 N_TOURS = 1
 screen_size = (1024,768)
 sep = os.path.sep

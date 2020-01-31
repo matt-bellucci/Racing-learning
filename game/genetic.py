@@ -7,13 +7,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 import tensorflow as tf
 tf.logging.set_verbosity(tf.logging.ERROR)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-from keras.layers import Dense
+from keras.layers import Dense, Activation
 from keras.models import Sequential
+import h5py
 
 
 class Chromosome:
 
-	def __init__(self, size, gene_list=[], random_init=True, start_range=0, end_range=1):
+	def __init__(self, size, gene_list=[], random_init=True, start_range=-1, end_range=1):
 		self.start_range = start_range
 		self.end_range = end_range
 		if len(gene_list) == size:
@@ -30,10 +31,28 @@ class Chromosome:
 
 def chromo_to_weights(chromos):
 	# pour passer de chromosomes à poids d'un reseau, il faut donner a keras une liste [poids, biais] pour chaque couche
-	listed_chromos = np.array([x.genes for x in chromos])
-	weights = [listed_chromos[:, :-1].T, listed_chromos[:,-1]]
-	return weights
+	weights_list = []
+	for chromo in chromos:
+		listed_chromos = np.array([x.genes for x in chromo])
+		weights = [listed_chromos[:, :-1].T, listed_chromos[:,-1]]
+		weights_list = weights_list + weights
+	return weights_list
 
+def weights_to_chromos(weights, start_range=-1, end_range=-1):
+	i = 0
+	list_chromos = []
+	while i<len(weights):
+		current_array = weights[i].T
+		current_array = np.c_[current_array, weights[i+1]]
+		chromos = []
+		for l in current_array:
+			chromo = Chromosome(len(l), gene_list = l, start_range=start_range, end_range=end_range, random_init=False)
+			chromos.append(chromo)
+		i += 2
+		list_chromos.append(chromos)
+	return list_chromos
+
+	
 def generate_chromos_from_struct(neural_structure):
 	chromos = []
 	for i in range(len(neural_structure)-1):
@@ -49,37 +68,21 @@ class Individu:
 	a avoir un individu en entree et donc de creer la structure adaptee pour ensuite 
 	calculer le score.
 	"""
-	def __init__(self, chromos, neural_structure, fit_function):
-		self.chromos = chromos
+	def __init__(self, neural_structure, fit_function):
+		self.chromos = generate_chromos_from_struct(neural_structure)
 		self.fitness = 0.
 		self.fit_function = fit_function
-		self.structure = neural_structure
-		self.model = self.__build_model__()
+		self.weights = chromo_to_weights(self.chromos)
 
-	def update_fitness(self):
-		self.fitness = self.fit_function(self)
-
-	def __build_model__(self):
-		model = Sequential()
-		first_weights = chromo_to_weights(self.chromos[0])
-
-		model.add(Dense(self.structure[1], input_dim=self.structure[0], weights=first_weights, 
-		activation='softmax'))
-		if len(self.structure) > 2:
-			for i, k in enumerate(self.structure[2:]):
-		 		model.add(Dense(k, weights=chromo_to_weights(self.chromos[i+1]), activation='softmax'))
-		model.compile(optimizer='sgd', loss='mean_squared_error')
-		return model
-
-
-
-
+	def update_fitness(self, model):
+		model.set_weights(self.weights)
+		self.fitness = self.fit_function(self, model)
 
 class Population:
 
-	def __init__(self, n_individus, neural_structure, initial_chromosomes, fit_function, individuals=None):
+	def __init__(self, n_individus, neural_structure, fit_function, individuals=None):
 		if not individuals or len(individuals) != n_individus:
-			self.individuals = np.array([Individu(copy.deepcopy(initial_chromosomes), neural_structure, fit_function) for x in range(n_individus)])
+			self.individuals = np.array([Individu(neural_structure, fit_function) for x in range(n_individus)])
 		else:
 			self.individuals = np.array(individuals)
 		# deepcopy des chromosomes pour qu'ils soient modifiables, sinon c'est une reference a la meme adresse
@@ -88,15 +91,18 @@ class Population:
 		self.structure = neural_structure # [n_inputs, n_neurons_layer1, n_neurons_layer2, ..., n_outputs]
 
 
-	def fit(self):
-		for individual in self.individuals:
-			individual.update_fitness()
+	def fit(self, model):
+		for i in range(len(self.individuals)):
+			print(str(i+1)+"/"+str(len(self.individuals)))
+			self.individuals[i].update_fitness(model)
 
 	def rank_fitness(self):
 		return sorted([i for i in range (self.n_individus)], reverse=True, key = lambda x : self.individuals[x].fitness)
 
 	def best_scores(self, n_firsts=1):
 		rank = np.array(self.rank_fitness())
+		n_firsts = min(n_firsts, self.n_individus)
+		print(n_firsts)
 		return [self.individuals[rank[i]].fitness for i in range(n_firsts)]
 
 
@@ -153,25 +159,37 @@ def mutation(new_indiv, chance=0.25):
 
 class Genetic:
 
-	def __init__(self, n_individus, neural_structure, initial_chromosomes, fit_function):
+	def __init__(self, n_individus, neural_structure, fit_function):
 		self.n_individus = n_individus
-		self.generations = [Population(n_individus, neural_structure, initial_chromosomes, fit_function)]
+		self.generations = [Population(n_individus, neural_structure, fit_function)]
 		self.neural_structure = neural_structure
 		self.fit_function = fit_function
 		self.n_generations = 0
+		self.model = self.__build_model__()
 
 	# Une optimisation est possible en n'iterant qu'une fois sur chaque chromosome de l'individu
 	# Cependant, selon l'implementation, on n'itere pas forcement a chaque etape sur tout les chromosomes
 	# Nous preferons restes generalistes en perdant en temps de calcul
 
 
+	def __build_model__(self):
+		model = Sequential()
+		model.add(Dense(self.neural_structure[1], input_dim=self.neural_structure[0], activation='softmax'))
+		if len(self.neural_structure) > 2:
+			for i, k in enumerate(self.neural_structure[2:-2]):
+		 		model.add(Dense(k), activation='softmax')
+			model.add(Dense(self.neural_structure[-1], activation='linear'))
+		model.compile(optimizer='sgd', loss='mean_squared_error')
+		return model
 
 
 	def train(self, n_bests=2, weights=None, mutation_chance=0.25):
 		if n_bests < 2:
 			n_bests = 2
 		current_gen = self.generations[-1] # derniere generation
-		current_gen.fit()
+		print("Fit population")
+		current_gen.fit(self.model)
+		print("Fit ended")
 		fitness_ranks = np.array(current_gen.rank_fitness())
 		n_fittest = np.array(current_gen.individuals)[fitness_ranks[:n_bests]]
 		parents = [i for i in combinations(n_fittest[:n_bests], 2)] # toutes les paires possibles de parents, sans 2 fois le meme
@@ -182,22 +200,34 @@ class Genetic:
 		weights_per_couple = get_weights_per_couple(weights, n_bests)
 		offspring_per_couple = get_offspring_per_couple(weights_per_couple, self.n_individus)
 		new_gen = []
-
-		n_ite = len(parents)*self.n_individus
-		ite = 0
 		for i, couple in enumerate(parents):
 			offsprings = []
 			for j in range(offspring_per_couple[i]):
-				sys.stdout.write("\r {:.0f}%".format(ite*100/n_ite))
-				sys.stdout.flush()
 				offsprings.append(generate_indivs(couple, mutation_chance=mutation_chance))
-				ite += 1
 			new_gen += offsprings
-		new_pop = Population(self.n_individus, self.neural_structure, None, self.fit_function, individuals=new_gen)
+		new_pop = Population(self.n_individus, self.neural_structure, self.fit_function, individuals=new_gen)
 		
 		self.generations.append(new_pop)
 		self.n_generations += 1
 		return self.generations[-1]
+
+	def save_gen(self):
+		file = h5py.File('last_weights.hdf5', 'w')
+		weights = []
+		for i in range(self.n_individus):
+			weights.append(self.generations[-1].individuals[i].weights)
+		weights = np.array(weights)
+		group = file['weights']
+		group.create_dataset(name='weights', data=weights)
+		file.flush()
+		file.close()
+
+	def load_weights(filename):
+		file = h5py.File(filename, 'a')
+		group = file['weights']
+		weights = group['weights']
+		file.close()
+		return weights
 
 def generate_indivs(couple, mutation_chance=0.25):
 	new_indiv = copy.deepcopy(couple[0]) # on prend le meme individu que le meilleur parent
@@ -210,28 +240,17 @@ def main():
 	def fit(indi):
 		return np.sum(indi.chromos[0][0].genes)
 
-	neural_structure = [4,10,5,3]
-	print(neural_structure)
+	neural_structure = [4,3]
+	#print(neural_structure)
 	init_chromo = generate_chromos_from_struct(neural_structure)
-	#print(type(init_chromo))
+	print(init_chromo)
+	weights = chromo_to_weights(init_chromo)
+	#print(weights)
+	conv_chromo = np.array(weights_to_chromos(weights))
+	print(conv_chromo)
+	conv_weights = np.array(chromo_to_weights(conv_chromo))
+	#print(conv_weights)
 	
-	pop = Population(100, neural_structure, init_chromo, fit)
-	#print(chromo_to_weights(init_chromo[0]))
-	#pop.fit()
-	print("Génération modèle")
-	#gen = Genetic(100, neural_structure, init_chromo, fit)
-	print("Entrainement")
-	# for i in range(10):
-	# 	print("Génération " + str(i))
-	# 	pop = gen.train(n_bests=4, weights=[0.5,0.2,0.2,0.1], n_proc = 8)
-	# 	pop.fit()
-	# 	print(pop.best_score())
-	# 	print(pop.individuals[0].chromos[0][0].genes)
-
-	#ranks = pop.rank_fitness()
-	#print([pop.individuals[i].fitness for i in ranks])
-	#model = Genetic(10,init_chromo, fit)
-	#model.train()
 
 if __name__== "__main__":
 	main()

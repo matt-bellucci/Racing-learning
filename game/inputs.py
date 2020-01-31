@@ -40,8 +40,8 @@ class Inputs:
 				return False
 		return True
 
-	def list_to_inputs(list):
-		inp = Input()
+	def list_to_inputs(liste):
+		inp = Inputs()
 		inp.left = liste[0]
 		inp.right = liste[1]
 		inp.throttle = liste[2]

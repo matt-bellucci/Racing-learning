@@ -65,5 +65,18 @@ def take_decision(decision):
 		decision_input.brake = 1
 		# on garde la valeur initiale de frein a main
 	return decision_input
-	
+
+def net_to_input(net):
+
+	inp = Inputs()
+	if net[0] < 0:
+		inp.brake = -net[0]
+	else:
+		inp.throttle = net[0]
+
+	if net[1] < 0:
+		inp.left = -net[1]
+	else:
+		inp.right = net[1]
+	return inp
 

@@ -17,7 +17,7 @@ def agent_inputs(vectors, car, circuit_img):
 
 
 def game_loop(screen, clock, car, vectors, circuit, is_ai=True, checkpoint=0, render_car=True,
- render_circuit=False):
+ render_circuit=True):
 	dtms = clock.tick(FPS)
 	circuit_img = circuit.get_nth_checkpoint(checkpoint)
 	score_update = 0
