@@ -70,7 +70,7 @@ class Individu:
 	"""
 	def __init__(self, neural_structure, fit_function):
 		self.chromos = generate_chromos_from_struct(neural_structure)
-		self.fitness = 0.
+		self.fitness = np.random.random()
 		self.fit_function = fit_function
 		self.weights = chromo_to_weights(self.chromos)
 
@@ -78,13 +78,31 @@ class Individu:
 		model.set_weights(self.weights)
 		self.fitness = self.fit_function(self, model)
 
+	def copy(self):
+		new = copy.deepcopy(self)
+		new.chromos = copy.deepcopy(self.chromos)
+		new.fitness = copy.deepcopy(self.fitness)
+		new.weights = copy.deepcopy(self.weights)
+		return new
+
 class Population:
 
 	def __init__(self, n_individus, neural_structure, fit_function, individuals=None):
+		self.individuals = list()
+		t = Individu(neural_structure, fit_function)
+		print(hex(id(t.fitness)))
+		d = Individu(neural_structure, fit_function)
+		print(hex(id(d.fitness)))
 		if not individuals or len(individuals) != n_individus:
-			self.individuals = np.array([Individu(neural_structure, fit_function) for x in range(n_individus)])
+			for i in range(n_individus):
+				indiv = Individu(neural_structure, fit_function)
+				self.individuals.append(indiv.copy())
+				# print(hex(id(self.individuals)))
 		else:
 			self.individuals = np.array(individuals)
+
+		for i in range(len(self.individuals)):
+			print(hex(id(self.individuals[i].fitness)))
 		# deepcopy des chromosomes pour qu'ils soient modifiables, sinon c'est une reference a la meme adresse
 		# donc les modifier pour 1 indiv les modifient pour tous
 		self.n_individus = n_individus
@@ -97,13 +115,17 @@ class Population:
 			self.individuals[i].update_fitness(model)
 
 	def rank_fitness(self):
-		return sorted([i for i in range (self.n_individus)], reverse=True, key = lambda x : self.individuals[x].fitness)
+		fitness = [indiv.fitness for indiv in self.individuals]
+		sort = np.argsort(fitness)[::-1]
+		return sort
 
 	def best_scores(self, n_firsts=1):
 		rank = np.array(self.rank_fitness())
 		n_firsts = min(n_firsts, self.n_individus)
 		print(n_firsts)
-		return [self.individuals[rank[i]].fitness for i in range(n_firsts)]
+		print(rank)
+		sorted_indiv = np.array(self.individuals)[rank]
+		return [indiv.fitness for indiv in sorted_indiv[:n_firsts]]
 
 
 
@@ -139,6 +161,7 @@ def crossover(indiv1, indiv2, new_indiv):
 	for i, layer_chromos in enumerate(new_indiv.chromos):
 		for j, chromo in enumerate(layer_chromos):
 			crossover_point = np.random.randint(len(chromo.genes)) # point ou l'on prend les genes de l'autre individu
+			chromo.genes[:crossover_point] = indiv1.chromos[i][j].genes[:crossover_point]
 			chromo.genes[crossover_point:] = indiv2.chromos[i][j].genes[crossover_point:]
 
 	return new_indiv
@@ -147,12 +170,13 @@ def mutation(new_indiv, chance=0.25):
 
 	# plusieurs choix d'implementation, mutation chromosome par chromosome ou sur un gene parmi tous
 	# ici on fera chromosome par chromosome
+	print(chance)
 	for layer_chromos in new_indiv.chromos:
 		for chromo in layer_chromos:
 			eps = np.random.rand()
 			if eps < chance:
 				gene_mutated = np.random.randint(len(chromo.genes))
-				new_value = chromo.start_range + np.random.rand() * (chromo.end_range - chromo.start_range)
+				new_value = -gene_mutated
 				chromo.genes[gene_mutated] = new_value
 
 	return new_indiv
@@ -203,6 +227,8 @@ class Genetic:
 		for i, couple in enumerate(parents):
 			offsprings = []
 			for j in range(offspring_per_couple[i]):
+				new = Individu(self.neural_structure, self.fit_function)
+
 				offsprings.append(generate_indivs(couple, mutation_chance=mutation_chance))
 			new_gen += offsprings
 		new_pop = Population(self.n_individus, self.neural_structure, self.fit_function, individuals=new_gen)
@@ -230,7 +256,7 @@ class Genetic:
 		return weights
 
 def generate_indivs(couple, mutation_chance=0.25):
-	new_indiv = copy.deepcopy(couple[0]) # on prend le meme individu que le meilleur parent
+	new_indiv = Individu(neural_structure, fit_function) # on prend le meme individu que le meilleur parent
 	new_indiv = crossover(couple[0], couple[1], new_indiv)
 	new_indiv = mutation(new_indiv, chance=mutation_chance)
 	return new_indiv
