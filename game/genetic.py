@@ -12,33 +12,84 @@ from keras.models import Sequential
 import h5py
 
 
-class Chromosome:
+"""
+Implémentation d'un algorithme génétique apprenant les poids d'un réseau de neurones densément connecté
+"""
 
+class Chromosome:
+	"""
+	Un chromosome est un ensemble de gènes, un chromosome représente les caractéristiques d'un perceptrop.
+	Les gènes sont les poids entre les neurones de la couche précédente et lui-même, 
+	avec un poids représentant le biais
+	"""
 	def __init__(self, size, gene_list=[], random_init=True, start_range=-1, end_range=1):
-		self.start_range = start_range
-		self.end_range = end_range
+		"""Constructeur d'un chromosome
+		Un chromosome est une liste de gènes dont les valeurs sont comprises dans un intervalle.
+		Pour définir un réseau de neurones, il faut une liste de liste de chromosomes. 
+		On a donc [Couche1, Couche2, ...] où chaque couche est une liste de chromosomes 
+		correspondant à chaque neurone de cette couche.
+		Args:
+			size (int): longueur de la liste
+			gene_list (list): valeur des gènes si connus à l'avance, si vide on en génère aléatoirement
+			random_init (bool): si True, gènes choisis aléatoirement, sinon initialisés à 0
+			start_range (float): borne inférieur de l'intervalle
+			end_range (float): borne supérieur de l'intervalle
+
+		Returns:
+			Chromosome : Liste de gènes
+		"""
+		# gestion des inputs 
+		if start_range > end_range:
+			self.start_range = end_range
+			self.end_range = start_range
+		else:
+			self.start_range = start_range
+			self.end_range = end_range
+
 		if len(gene_list) == size:
-			self.genes = [max(min(end_range, gene_list[i]), start_range) for i in range(size)]
 			# clipping de la liste pour s'assurer d'etre bien dans l'intervalle donne
+			self.genes = [max(min(end_range, gene_list[i]), start_range) for i in range(size)]
+			
 		elif random_init:
 			self.genes = start_range + np.random.rand(size)*(end_range-start_range)
 		else:
 			self.genes = np.zeros(size)
+
 		self.genes = np.array(self.genes)
-		#print(self.genes)
 
 
+# ====== Définition de fonctions utiles pour gérer les chromosomes =====
 
 def chromo_to_weights(chromos):
-	# pour passer de chromosomes à poids d'un reseau, il faut donner a keras une liste [poids, biais] pour chaque couche
+	""" Convertir chromosomes en poids pour réseau de neurones
+	Fonction qui prend en entrée une liste de liste de chromosomes et retourne une ensemble de poids
+	que Keras peut utiliser comme poids d'un réseau de neurones.
+
+	Args:
+		chromos (list(list(Chromosome))) : Liste de liste de chromosomes qui représente le réseau de neurones
+
+	Returns:
+
+		numpy array: matrice des poids sous une forme lisible directement par Keras 
+
+	"""
 	weights_list = []
 	for chromo in chromos:
-		listed_chromos = np.array([x.genes for x in chromo])
+		listed_chromos = np.array([x.genes for x in chromo], dtype=float)
 		weights = [listed_chromos[:, :-1].T, listed_chromos[:,-1]]
 		weights_list = weights_list + weights
 	return weights_list
 
 def weights_to_chromos(weights, start_range=-1, end_range=-1):
+	""" Conversion poids d'un réseau en chromosomes
+	Fonction inverse de chromo_to_weights, permet de générer les chromosomes d'un Individu
+	à partir des poids de son réseau
+
+	Args:
+
+
+	
+	"""
 	i = 0
 	list_chromos = []
 	while i<len(weights):
@@ -72,7 +123,7 @@ class Individu:
 		self.chromos = generate_chromos_from_struct(neural_structure)
 		self.fitness = np.random.random()
 		self.fit_function = fit_function
-		self.weights = chromo_to_weights(self.chromos)
+		self.weights = np.array(chromo_to_weights(self.chromos))
 
 	def update_fitness(self, model):
 		model.set_weights(self.weights)
@@ -89,10 +140,6 @@ class Population:
 
 	def __init__(self, n_individus, neural_structure, fit_function, individuals=None):
 		self.individuals = list()
-		t = Individu(neural_structure, fit_function)
-		print(hex(id(t.fitness)))
-		d = Individu(neural_structure, fit_function)
-		print(hex(id(d.fitness)))
 		if not individuals or len(individuals) != n_individus:
 			for i in range(n_individus):
 				indiv = Individu(neural_structure, fit_function)
@@ -101,10 +148,6 @@ class Population:
 		else:
 			self.individuals = np.array(individuals)
 
-		for i in range(len(self.individuals)):
-			print(hex(id(self.individuals[i].fitness)))
-		# deepcopy des chromosomes pour qu'ils soient modifiables, sinon c'est une reference a la meme adresse
-		# donc les modifier pour 1 indiv les modifient pour tous
 		self.n_individus = n_individus
 		self.structure = neural_structure # [n_inputs, n_neurons_layer1, n_neurons_layer2, ..., n_outputs]
 
@@ -122,8 +165,8 @@ class Population:
 	def best_scores(self, n_firsts=1):
 		rank = np.array(self.rank_fitness())
 		n_firsts = min(n_firsts, self.n_individus)
-		print(n_firsts)
-		print(rank)
+		# print("n_firsts = ", n_firsts)
+		# print("rank= ", rank)
 		sorted_indiv = np.array(self.individuals)[rank]
 		return [indiv.fitness for indiv in sorted_indiv[:n_firsts]]
 
@@ -170,7 +213,6 @@ def mutation(new_indiv, chance=0.25):
 
 	# plusieurs choix d'implementation, mutation chromosome par chromosome ou sur un gene parmi tous
 	# ici on fera chromosome par chromosome
-	print(chance)
 	for layer_chromos in new_indiv.chromos:
 		for chromo in layer_chromos:
 			eps = np.random.rand()
@@ -206,6 +248,12 @@ class Genetic:
 		model.compile(optimizer='sgd', loss='mean_squared_error')
 		return model
 
+	def generate_indivs(self, couple, mutation_chance=0.25):
+		new_indiv = Individu(self.neural_structure, self.fit_function) # on prend le meme individu que le meilleur parent
+		new_indiv = crossover(couple[0], couple[1], new_indiv)
+		new_indiv = mutation(new_indiv, chance=mutation_chance)
+		return new_indiv
+
 
 	def train(self, n_bests=2, weights=None, mutation_chance=0.25):
 		if n_bests < 2:
@@ -229,7 +277,7 @@ class Genetic:
 			for j in range(offspring_per_couple[i]):
 				new = Individu(self.neural_structure, self.fit_function)
 
-				offsprings.append(generate_indivs(couple, mutation_chance=mutation_chance))
+				offsprings.append(self.generate_indivs(couple, mutation_chance=mutation_chance))
 			new_gen += offsprings
 		new_pop = Population(self.n_individus, self.neural_structure, self.fit_function, individuals=new_gen)
 		
@@ -237,29 +285,25 @@ class Genetic:
 		self.n_generations += 1
 		return self.generations[-1]
 
-	def save_gen(self):
-		file = h5py.File('last_weights.hdf5', 'w')
+	def save_gen(self, filename):
+		file = h5py.File(filename, 'w')
 		weights = []
 		for i in range(self.n_individus):
-			weights.append(self.generations[-1].individuals[i].weights)
-		weights = np.array(weights)
-		group = file['weights']
-		group.create_dataset(name='weights', data=weights)
+			
+			weights.append(np.array(self.generations[-1].individuals[i].weights))
+		weights = np.array(weights, dtype=float)
+		print(weights)
+		file.create_dataset(name='weights', data=weights)
 		file.flush()
 		file.close()
 
-	def load_weights(filename):
+	def load_gen(filename):
 		file = h5py.File(filename, 'a')
 		group = file['weights']
 		weights = group['weights']
 		file.close()
 		return weights
 
-def generate_indivs(couple, mutation_chance=0.25):
-	new_indiv = Individu(neural_structure, fit_function) # on prend le meme individu que le meilleur parent
-	new_indiv = crossover(couple[0], couple[1], new_indiv)
-	new_indiv = mutation(new_indiv, chance=mutation_chance)
-	return new_indiv
 
 def main():
 
