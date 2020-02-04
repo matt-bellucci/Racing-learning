@@ -13,25 +13,33 @@ import h5py
 
 
 """
-Implémentation d'un algorithme génétique apprenant les poids d'un réseau de neurones densément connecté
+Implémentation d'un algorithme génétique apprenant les poids d'un réseau de 
+neurones densément connecté
 """
 
 class Chromosome:
 	"""
-	Un chromosome est un ensemble de gènes, un chromosome représente les caractéristiques d'un perceptrop.
-	Les gènes sont les poids entre les neurones de la couche précédente et lui-même, 
-	avec un poids représentant le biais
+	Un chromosome est un ensemble de gènes, un chromosome représente 
+	les caractéristiques d'un perceptron.
+	Les gènes sont les poids entre les neurones de la couche précédente 
+	et lui-même, avec un poids représentant le biais
 	"""
-	def __init__(self, size, gene_list=[], random_init=True, start_range=-1, end_range=1):
+	def __init__(self, size, gene_list=[], random_init=True, 
+		start_range=-1, end_range=1):
 		"""Constructeur d'un chromosome
-		Un chromosome est une liste de gènes dont les valeurs sont comprises dans un intervalle.
-		Pour définir un réseau de neurones, il faut une liste de liste de chromosomes. 
-		On a donc [Couche1, Couche2, ...] où chaque couche est une liste de chromosomes 
-		correspondant à chaque neurone de cette couche.
+		Un chromosome est une liste de gènes dont les valeurs sont comprises 
+		dans un intervalle.
+		Pour définir un réseau de neurones, 
+		il faut une liste de liste de chromosomes. 
+
+		On a donc [Couche1, Couche2, ...] où chaque couche est 
+		une liste de chromosomes correspondant à chaque neurone de cette couche.
 		Args:
 			size (int): longueur de la liste
-			gene_list (list): valeur des gènes si connus à l'avance, si vide on en génère aléatoirement
-			random_init (bool): si True, gènes choisis aléatoirement, sinon initialisés à 0
+			gene_list (list): valeur des gènes si connus à l'avance, 
+								si vide on en génère aléatoirement
+			random_init (bool): si True, gènes choisis aléatoirement, 
+								sinon initialisés à 0
 			start_range (float): borne inférieur de l'intervalle
 			end_range (float): borne supérieur de l'intervalle
 
@@ -47,8 +55,10 @@ class Chromosome:
 			self.end_range = end_range
 
 		if len(gene_list) == size:
-			# clipping de la liste pour s'assurer d'etre bien dans l'intervalle donne
-			self.genes = [max(min(end_range, gene_list[i]), start_range) for i in range(size)]
+			# clipping de la liste pour s'assurer d'etre bien dans 
+			# l'intervalle donne
+			self.genes = [max(min(end_range, gene_list[i]), start_range) 
+				for i in range(size)]
 			
 		elif random_init:
 			self.genes = start_range + np.random.rand(size)*(end_range-start_range)
@@ -62,11 +72,13 @@ class Chromosome:
 
 def chromo_to_weights(chromos):
 	""" Convertir chromosomes en poids pour réseau de neurones
-	Fonction qui prend en entrée une liste de liste de chromosomes et retourne une ensemble de poids
-	que Keras peut utiliser comme poids d'un réseau de neurones.
+	Fonction qui prend en entrée une liste de liste de chromosomes et 
+	retourne une ensemble de poids que Keras peut utiliser 
+	comme poids d'un réseau de neurones.
 
 	Args:
-		chromos (list(list(Chromosome))) : Liste de liste de chromosomes qui représente le réseau de neurones
+		chromos (list(list(Chromosome))) : Liste de liste de chromosomes qui 
+											représente le réseau de neurones
 
 	Returns:
 
@@ -76,28 +88,37 @@ def chromo_to_weights(chromos):
 	weights_list = []
 	for chromo in chromos:
 		listed_chromos = np.array([x.genes for x in chromo], dtype=float)
-		weights = [np.array(listed_chromos[:, :-1].T, dtype=float), np.array(listed_chromos[:,-1], dtype=float)]
+		weights = [np.array(listed_chromos[:, :-1].T, dtype=float), 
+			np.array(listed_chromos[:,-1], dtype=float)]
 		weights_list = weights_list + weights
 	return np.array(weights_list)
 
-def weights_to_chromos(weights, start_range=-1, end_range=1):
+def weights_to_chromos(weights, start_range=-1., end_range=1.):
 	""" Conversion poids d'un réseau en chromosomes
-	Fonction inverse de chromo_to_weights, permet de générer les chromosomes d'un Individu
-	à partir des poids de son réseau
+	Fonction inverse de chromo_to_weights, permet de générer les chromosomes 
+	d'un Individu à partir des poids de son réseau
 
 	Args:
-
-
+		weights (list) : poids d'un réseau de neurones issus directement 
+						du modèle Keras
+		start_range (float) : borne inférieure des gènes de chaque chromosome
+		end_range (float) : borne supérieure des gènes de chaque chromosome
+	
+	Returns:
+		list(list(Chromosome)) : la liste des listes des chromosomes sous la 
+									forme utilisée par Individu
 	
 	"""
 	i = 0
 	list_chromos = []
 	while i<len(weights):
+		# fonction inverse de chromo_to_weights donc opérations inverses
 		current_array = weights[i].T
 		current_array = np.c_[current_array, weights[i+1]]
 		chromos = []
 		for l in current_array:
-			chromo = Chromosome(len(l), gene_list = l, start_range=start_range, end_range=end_range, random_init=False)
+			chromo = Chromosome(len(l), gene_list = l, start_range=start_range, 
+				end_range=end_range, random_init=False)
 			chromos.append(chromo)
 		i += 2
 		list_chromos.append(chromos)
@@ -105,6 +126,18 @@ def weights_to_chromos(weights, start_range=-1, end_range=1):
 
 	
 def generate_chromos_from_struct(neural_structure):
+	"""Genère les chromosomes d'un individu à partir de la structure du réseau
+	Fonction utilisée pour initialiser les chromosomes des Individus 
+	lors de la création du modèle génétique.
+	
+	Args:
+		neural_structure (list): Le nombre de perceptrons par couche
+
+	Returns:
+		list(list(Chromosome)) : la liste des listes des chromosomes sous la 
+									forme utilisée par Individu
+
+	"""
 	chromos = []
 	for i in range(len(neural_structure)-1):
 		chromos_layer = []
@@ -114,15 +147,23 @@ def generate_chromos_from_struct(neural_structure):
 	return chromos
 
 class Individu:
-	"""
+	""" Un individu d'une espèce commune, ce qui le définit sont ses chromosomes
+	et son score de fitness.
+
 	La fit_function est la fonction de fitness qui doit etre codee de maniere
 	a avoir un individu en entree et donc de creer la structure adaptee pour ensuite 
 	calculer le score.
+
+	On lui donne ses poids en attribut pour 
 	"""
 	def __init__(self, neural_structure, fit_function):
+		# init avec gènes aléatoires
 		self.chromos = generate_chromos_from_struct(neural_structure)
+		# init avec random pour éviter des problèmes de partage d'adresse
+		# mémoire
 		self.fitness = np.random.random()
 		self.fit_function = fit_function
+		# simple conversion des chromosomes en poids pour le modèle
 		self.weights = np.array(chromo_to_weights(self.chromos))
 
 	def update_fitness(self, model):
@@ -130,6 +171,11 @@ class Individu:
 		self.fitness = self.fit_function(self, model)
 
 	def copy(self):
+		"""Copie d'un individu avec adresses mémoires différentes
+		Fonction qui permet de copier un Individu en attribuant une
+		adresse mémoire différente à l'instance mais aussi à chacun des
+		attributs
+		"""
 		new = copy.deepcopy(self)
 		new.chromos = copy.deepcopy(self.chromos)
 		new.fitness = copy.deepcopy(self.fitness)
@@ -137,7 +183,11 @@ class Individu:
 		return new
 
 class Population:
+	"""Ensemble d'individus d'une même espèce
+	La classe Population 
 
+
+	"""
 	def __init__(self, n_individus, neural_structure, fit_function, individuals=None):
 		self.individuals = list()
 		if not individuals or len(individuals) != n_individus:
@@ -177,7 +227,6 @@ class Population:
 		for i in range(self.n_individus):
 			grp = file.create_group("weights_{}".format(i))
 			weights = np.array(self.individuals[i].weights)
-			print(weights)
 			for k in range(len(weights)//2):
 				l = 2*k
 				grp.create_dataset(name="layer_{}".format(k), data=weights[l])
@@ -232,7 +281,7 @@ def mutation(new_indiv, chance=0.25):
 			eps = np.random.rand()
 			if eps < chance:
 				gene_mutated = np.random.randint(len(chromo.genes))
-				new_value = -gene_mutated
+				new_value = chromo.start_range + (chromo.end_range-chromo.start_range)*np.random.random()
 				chromo.genes[gene_mutated] = new_value
 
 	return new_indiv
@@ -285,6 +334,7 @@ class Genetic:
 			weights = np.ones(n_bests)	
 		weights_per_couple = get_weights_per_couple(weights, n_bests)
 		offspring_per_couple = get_offspring_per_couple(weights_per_couple, self.n_individus)
+		print(offspring_per_couple)
 		new_gen = []
 		for i, couple in enumerate(parents):
 			offsprings = []
