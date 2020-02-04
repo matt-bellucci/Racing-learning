@@ -76,11 +76,11 @@ def chromo_to_weights(chromos):
 	weights_list = []
 	for chromo in chromos:
 		listed_chromos = np.array([x.genes for x in chromo], dtype=float)
-		weights = [listed_chromos[:, :-1].T, listed_chromos[:,-1]]
+		weights = [np.array(listed_chromos[:, :-1].T, dtype=float), np.array(listed_chromos[:,-1], dtype=float)]
 		weights_list = weights_list + weights
-	return weights_list
+	return np.array(weights_list)
 
-def weights_to_chromos(weights, start_range=-1, end_range=-1):
+def weights_to_chromos(weights, start_range=-1, end_range=1):
 	""" Conversion poids d'un réseau en chromosomes
 	Fonction inverse de chromo_to_weights, permet de générer les chromosomes d'un Individu
 	à partir des poids de son réseau
@@ -170,6 +170,20 @@ class Population:
 		sorted_indiv = np.array(self.individuals)[rank]
 		return [indiv.fitness for indiv in sorted_indiv[:n_firsts]]
 
+	def save_gen(self, filename):
+		file = h5py.File(filename, 'w')
+		file.create_dataset(name="n_individus", data=self.n_individus)
+		file.create_dataset(name="neural_structure", data=self.structure)
+		for i in range(self.n_individus):
+			grp = file.create_group("weights_{}".format(i))
+			weights = np.array(self.individuals[i].weights)
+			print(weights)
+			for k in range(len(weights)//2):
+				l = 2*k
+				grp.create_dataset(name="layer_{}".format(k), data=weights[l])
+				grp.create_dataset(name="bias_{}".format(k), data=weights[l+1])
+		file.flush()
+		file.close()
 
 
 def get_weights_per_couple(weights_per_parent, n_parents):
@@ -285,25 +299,28 @@ class Genetic:
 		self.n_generations += 1
 		return self.generations[-1]
 
-	def save_gen(self, filename):
-		file = h5py.File(filename, 'w')
+
+def load_gen(filename, fit_function, start_range=-1, end_range=1,):
+	file = h5py.File(filename, 'a')
+	n_individus = file["n_individus"][()]
+	neural_structure = file["neural_structure"][()]
+	individuals = []
+	for i in range(n_individus):
+		grp = file["weights_{}".format(i)]
+		n_layers = len(neural_structure)-1
 		weights = []
-		for i in range(self.n_individus):
-			
-			weights.append(np.array(self.generations[-1].individuals[i].weights))
-		weights = np.array(weights, dtype=float)
-		print(weights)
-		file.create_dataset(name='weights', data=weights)
-		file.flush()
-		file.close()
-
-	def load_gen(filename):
-		file = h5py.File(filename, 'a')
-		group = file['weights']
-		weights = group['weights']
-		file.close()
-		return weights
-
+		for k in range(n_layers):
+			weights.append(np.array(grp["layer_{}".format(k)][()]))
+			weights.append(np.array(grp["bias_{}".format(k)][()]))
+		chromos = weights_to_chromos(weights, start_range=start_range, end_range=end_range)
+		individual = Individu(neural_structure, fit_function)
+		individual.chromos = chromos
+		individual.weights = np.array(chromo_to_weights(chromos))
+		individuals.append(individual)
+	file.close()
+	gen = Population(n_individus, neural_structure, fit_function, individuals=individuals)
+	
+	return gen
 
 def main():
 

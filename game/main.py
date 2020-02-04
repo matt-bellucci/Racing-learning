@@ -21,6 +21,7 @@ n_frames = 0
 epsilon = 1e-3
 max_idle = 20
 init_chromo = genetic.generate_chromos_from_struct(neural_structure)
+print(np.shape(init_chromo[0]), np.shape(init_chromo[1]))
 
 def fit_function(indiv, model, max_frames=1000):
 	def decision(state_vector):
@@ -56,22 +57,31 @@ def fit_function(indiv, model, max_frames=1000):
 	print(score)
 	return score
 
-n_indivs = 2
+n_indivs = 1
 model = genetic.Genetic(n_indivs, neural_structure, fit_function)
 mutation_start = 0.5
 mutation_stop = 0.1
-n_steps = 100
+n_steps = 1
 mutation_decay = (mutation_stop-mutation_start)/n_steps
+best_score = -1000.
 for i in range(n_steps):
+	filename = dt_string + str(i)
 	mutation_chance = mutation_start + i*mutation_decay
 	print("epsilon = ", mutation_chance)
 	gen = model.train(mutation_chance=mutation_chance, n_bests=3)
+
 	last_gen = model.generations[-2]
-	print("best scores = ", last_gen.best_scores(n_firsts=5))
-	filename = dt_string + str(i)
+	best_scores = last_gen.best_scores(n_firsts=5)
+	print("best scores = ", best_scores)
+	if best_scores[0] >= best_score:
+		last_gen.save_gen(filename+".hdf5")
+		best_score = best_scores[0]
 	# plt.hist([indiv.fitness for indiv in last_gen.individuals], 500)
 	# plt.show()
-	model.save_gen(filename+".hdf5")
+gen = genetic.load_gen(filename+".hdf5", fit_function)
+
+
+gen.fit(model.model)
 
 
 
