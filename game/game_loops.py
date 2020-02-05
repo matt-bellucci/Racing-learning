@@ -7,11 +7,19 @@ from car import Car
 from circuit import Circuit
 import utils
 
-INPUT_LEN_CAR = 3
 def agent_inputs(vectors, car, circuit_img):
 	vectors_distance = [utils.distanceToCollision(car.position,
 	 circuit_img, vector.rotate(math.degrees(car.heading)))[1] for vector in vectors]
-	car_data = [car.absVel, car.accel[0], car.accel[1]]
+	car_data = []
+	car_dict = car.getCarDict()
+	for output in game_params["car_output"]:
+		o = car_dict[output]
+		if type(o) is list:
+			car_data = car_data + o
+
+		else:
+			car_data.append(o)
+	# car_data = [car.absVel, car.accel[0], car.accel[1]]
 
 	return car_data + vectors_distance
 

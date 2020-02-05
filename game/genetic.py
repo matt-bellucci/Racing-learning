@@ -305,8 +305,8 @@ class Genetic:
 		model = Sequential()
 		model.add(Dense(self.neural_structure[1], input_dim=self.neural_structure[0], activation='softmax'))
 		if len(self.neural_structure) > 2:
-			for i, k in enumerate(self.neural_structure[2:-2]):
-		 		model.add(Dense(k), activation='softmax')
+			for i, k in enumerate(self.neural_structure[2:-1]):
+				model.add(Dense(k, activation='softmax'))
 			model.add(Dense(self.neural_structure[-1], activation='linear'))
 		model.compile(optimizer='sgd', loss='mean_squared_error')
 		return model

@@ -4,8 +4,9 @@ from pygame.locals import *
 import math
 
 class Inputs:
-	def __init__(self):
-		pygame.key.set_repeat(1) # if any key is kept down, pygame will register it every 1ms
+	def __init__(self, init_pygame=True):
+		if init_pygame:
+			pygame.key.set_repeat(1) # if any key is kept down, pygame will register it every 1ms
 		self.left = 0.
 		self.right = 0.
 		self.throttle = 0.
@@ -38,6 +39,7 @@ class Inputs:
 			if event.type == pygame.QUIT:
 				# print("Stop")
 				return False
+
 		return True
 
 	def list_to_inputs(liste):

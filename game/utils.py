@@ -3,6 +3,9 @@ import pygame
 import car
 from constants import *
 from inputs import Inputs
+
+import yaml
+
 def distanceToCollision(position, circuit, direction, checkDistance=1, precision=10, max_iter=10):
 	# print(direction)
 	startPos = pygame.Vector2(position.x, position.y)
@@ -79,4 +82,5 @@ def net_to_input(net):
 	else:
 		inp.right = net[1]
 	return inp
+
 

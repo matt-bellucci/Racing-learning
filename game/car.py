@@ -5,14 +5,13 @@ from math import cos, sin, sqrt, atan2, degrees
 from numpy import sign, clip
 from pygame.math import Vector2
 from inputs import Inputs
-from constants import Config
 """
 This is derived from https://github.com/spacejack/carphysics2d which simulates accurately car physics in 2D but is in Javascript
 """
-
+sep = os.path.sep
 
 class Car:
-	def __init__(self, heading, position):
+	def __init__(self, heading, position, load_image=True):
 
 		self.heading = copy.deepcopy(heading) # angle in radians
 		self.position = copy.deepcopy(position) # metres worlds coords
@@ -33,10 +32,10 @@ class Car:
 		self.config = Config()
 		self.setConfig()
 
-		self.inputs = Inputs()
-
-		self.image = pygame.image.load(self.config.image_path).convert_alpha()
-		self.image = pygame.transform.scale(self.image, (32, 16))
+		self.inputs = Inputs(init_pygame=load_image)
+		if load_image:
+			self.image = pygame.image.load(self.config.image_path).convert_alpha()
+			self.image = pygame.transform.scale(self.image, (32, 16))
 
 	def setConfig(self):
 		self.inertia = self.config.mass * self.config.inertiaScale
@@ -46,9 +45,9 @@ class Car:
 
 	def getCarDict(self):
 		car_stats = {"heading" : self.heading,
-					 "position" : self.position,
-					 "velocity" : self.velocity,
-					 "acceleration" : self.accel,
+					 "position" : [self.position.x, self.position.y],
+					 "velocity" : [self.velocity.x, self.velocity.y],
+					 "acceleration" : [self.accel.x, self.accel.y],
 					 "speed" : self.absVel,
 					 "yawRate" : self.yawRate,
 					 "steer" : self.steer,
@@ -202,7 +201,37 @@ class Car:
 			text += str(stats[i]) + " "
 		return text
 
-
+class Config:
+	"""
+	This class contains all the constants for the car and the world, for interesting results,
+	some constants could be modified or randomized
+	"""
+	def __init__(self):
+		self.gravity = 9.81 # m/s^2
+		self.mass = 1000.0 # kg
+		self.inertiaScale = 1.0 # multiply by mass for inertia
+		self.halfWidth = 0.8 # centre to side of chassis (metres)
+		self.cgToFront = 2.0 # centre of gravity to front of chassis (metres)
+		self.cgToRear = 2.0 # centre of gravity to rear of chassis (metres)
+		self.cgToFrontAxle = 1.25 # centre gravity to front axle
+		self.cgToRearAxle = 1.25 # centre gravity to rear axle
+		self.cgHeight = 0.55 # centre gravity height
+		self.wheelRadius = 0.3 # includes tire and represents height of axle
+		# self.wheelWidth = 0.2 # for render only
+		self.tireGrip = 2. # How much grip tires have
+		self.lockGrip = 0.9 # % of grip available when wheel is locked
+		self.engineForce = 12000.
+		self.brakeForce = 14000.
+		self.eBrakeForce = self.brakeForce / 2.5
+		self.weightTransfer = 0.2 # How much weight is transferred during acceleration/braking
+		self.maxSteer = 3.14 # maximum steering angle in radians
+		self.cornerStiffnessFront = 5.
+		self.cornerStiffnessRear = 5.2
+		self.airResist = 2.5 # air resistance ( * vel )
+		self.rollResist = 8. # rolling resistance force ( * vel )
+		self.safeSteer = False
+		self.smoothSteer = True
+		self.image_path = os.path.split(os.getcwd())[0] + sep +"resources"+ sep +"car.png"
 
 def main():
 	foo = Car(0.,0,0)

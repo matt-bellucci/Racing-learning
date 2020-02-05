@@ -1,0 +1,39 @@
+---
+# fichier pour parametre du jeu
+vectors : 
+  - [0., -1]
+  - [1., -1.]
+  - [1., -0.5]
+  - [1., 0.]
+  - [1., 0.5]
+  - [1., 1.]
+  - [0., 1.]
+
+epsilon : 0.001 # input minimum pour considérer la voiture active
+max_idle : 20 # nombre max de frames inactives avant de tuer la voiture
+max_frames : 1000 # nombre max de frames pour un entrainement entre 2 checkpoints
+fps : 60
+screen_size : [1024, 768]
+car_output : 
+  - heading
+  - velocity
+  - acceleration
+---
+# fichier pour parametres du modèle
+n_indiv : 100
+hidden_layers : [20]
+linear_model : true
+n_epochs : 100
+mutation_start : 0.3
+mutation_stop : 0.01
+n_bests : 10 # n meilleurs individus pour la reproduction
+weights : [10, 8, 6, 4, 3, 2, 1, 0.8, 0.5, 0.5] # poids de chaque individu pour la reproduction
+
+---
+# fichier pour les récompenses
+
+cp_reward : 20
+score_decay : 0.001
+die_penalty : 100
+max_frames_penalty : 150
+n_tours : 1
