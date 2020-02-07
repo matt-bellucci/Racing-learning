@@ -165,6 +165,7 @@ class Individu:
 		self.fit_function = fit_function
 		# simple conversion des chromosomes en poids pour le modèle
 		self.weights = np.array(chromo_to_weights(self.chromos))
+		self.neural_structure = neural_structure
 
 	def update_fitness(self, model):
 		model.set_weights(self.weights)
@@ -181,6 +182,18 @@ class Individu:
 		new.fitness = copy.deepcopy(self.fitness)
 		new.weights = copy.deepcopy(self.weights)
 		return new
+
+	def save_model(self, filename):
+		file = h5py.File(filename, 'w')
+		file.create_dataset(name="neural_structure", data=self.neural_structure)
+		grp = file.create_group("weights")
+		weights = np.array(self.weights)
+		for k in range(len(weights)//2):
+			l = 2*k
+			grp.create_dataset(name="layer_{}".format(k), data=weights[l])
+			grp.create_dataset(name="bias_{}".format(k), data=weights[l+1])
+		file.flush()
+		file.close()
 
 class Population:
 	"""Ensemble d'individus d'une même espèce
@@ -235,6 +248,7 @@ class Population:
 		file.close()
 
 
+
 def get_weights_per_couple(weights_per_parent, n_parents):
 	idx_combi = [i for i in combinations(np.arange(n_parents), 2)]
 	weights_per_couple = [weights_per_parent[p[0]]*weights_per_parent[p[1]] for p in idx_combi]
@@ -286,6 +300,16 @@ def mutation(new_indiv, chance=0.25):
 
 	return new_indiv
 
+def build_model(neural_structure):
+	model = Sequential()
+	model.add(Dense(neural_structure[1], input_dim=neural_structure[0], activation='softmax'))
+	if len(neural_structure) > 2:
+		for i, k in enumerate(neural_structure[2:-1]):
+			model.add(Dense(k, activation='softmax'))
+		model.add(Dense(neural_structure[-1], activation='linear'))
+	model.compile(optimizer='sgd', loss='mean_squared_error')
+	return model
+
 class Genetic:
 
 	def __init__(self, n_individus, neural_structure, fit_function):
@@ -294,22 +318,14 @@ class Genetic:
 		self.neural_structure = neural_structure
 		self.fit_function = fit_function
 		self.n_generations = 0
-		self.model = self.__build_model__()
+		self.model = build_model(self.neural_structure)
 
 	# Une optimisation est possible en n'iterant qu'une fois sur chaque chromosome de l'individu
 	# Cependant, selon l'implementation, on n'itere pas forcement a chaque etape sur tout les chromosomes
 	# Nous preferons restes generalistes en perdant en temps de calcul
 
 
-	def __build_model__(self):
-		model = Sequential()
-		model.add(Dense(self.neural_structure[1], input_dim=self.neural_structure[0], activation='softmax'))
-		if len(self.neural_structure) > 2:
-			for i, k in enumerate(self.neural_structure[2:-1]):
-				model.add(Dense(k, activation='softmax'))
-			model.add(Dense(self.neural_structure[-1], activation='linear'))
-		model.compile(optimizer='sgd', loss='mean_squared_error')
-		return model
+
 
 	def generate_indivs(self, couple, mutation_chance=0.25):
 		new_indiv = Individu(self.neural_structure, self.fit_function) # on prend le meme individu que le meilleur parent

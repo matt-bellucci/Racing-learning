@@ -17,17 +17,16 @@ screen_size : [1024, 768]
 car_output : 
   - heading
   - velocity
-  - acceleration
 ---
 # fichier pour parametres du modèle
-n_indiv : 100
-hidden_layers : [20]
+n_indiv : 10
+hidden_layers : [10]
 linear_model : true
-n_epochs : 100
+n_epochs : 50
 mutation_start : 0.3
-mutation_stop : 0.01
-n_bests : 10 # n meilleurs individus pour la reproduction
-weights : [10, 8, 6, 4, 3, 2, 1, 0.8, 0.5, 0.5] # poids de chaque individu pour la reproduction
+mutation_stop : 0.05
+n_bests : 5 # n meilleurs individus pour la reproduction
+weights : [] # poids de chaque individu pour la reproduction
 
 ---
 # fichier pour les récompenses

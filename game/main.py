@@ -23,7 +23,8 @@ vectors = game_params["vectors"]
 n_frames = 0
 # epsilon = 1e-3
 # max_idle = 20
-save_path = "."+sep+"models"+sep
+save_path_gen = "."+sep+"gens"+sep
+save_path_models = "."+sep+"models"+sep
 neural_structure = model_params["neural_structure"]
 init_chromo = genetic.generate_chromos_from_struct(neural_structure)
 print(neural_structure)
@@ -73,7 +74,8 @@ n_bests = model_params["n_bests"]
 weights_off = model_params["weights"]
 for i in range(n_epochs):
 	print("===== Génération {} =====".format(i))
-	filename = save_path + dt_string +"_"+ str(i)
+	filename_g = save_path_gen + dt_string +"_"+ str(i)
+	filename_m = save_path_models + dt_string
 	mutation_chance = mutation_start + i*mutation_decay
 	print("epsilon = ", mutation_chance)
 	gen = model.train(mutation_chance=mutation_chance, n_bests=n_bests,
@@ -83,7 +85,10 @@ for i in range(n_epochs):
 	best_scores = last_gen.best_scores(n_firsts=n_bests)
 	print("best scores = ", best_scores)
 	if best_scores[0] >= best_score:
-		last_gen.save_gen(filename+".hdf5")
+		best_indiv = last_gen.individuals[last_gen.rank_fitness()[0]]
+		best_indiv.save_model(filename_m 
+			+ "_s_"+ str(int(best_indiv.fitness))+".hdf5")
+		last_gen.save_gen(filename_g+".hdf5")
 		best_score = best_scores[0]
 	# plt.hist([indiv.fitness for indiv in last_gen.individuals], 500)
 	# plt.show()
