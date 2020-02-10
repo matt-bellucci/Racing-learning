@@ -366,7 +366,7 @@ class Genetic:
 		return self.generations[-1]
 
 
-def load_gen(filename, fit_function, start_range=-1, end_range=1,):
+def load_gen(filename, fit_function, start_range=-1, end_range=1):
 	file = h5py.File(filename, 'a')
 	n_individus = file["n_individus"][()]
 	neural_structure = file["neural_structure"][()]
@@ -387,6 +387,22 @@ def load_gen(filename, fit_function, start_range=-1, end_range=1,):
 	gen = Population(n_individus, neural_structure, fit_function, individuals=individuals)
 	
 	return gen
+
+def load_model(filename, start_range=-1, end_range=1):
+	file = h5py.File(filename, 'a')
+	neural_structure = file["neural_structure"][()]	
+	grp = file["weights"]
+	n_layers = len(neural_structure)-1
+	weights = []
+	for k in range(n_layers):
+		weights.append(np.array(grp["layer_{}".format(k)][()]))
+		weights.append(np.array(grp["bias_{}".format(k)][()]))
+	chromos = weights_to_chromos(weights, start_range=start_range, end_range=end_range)
+	individual = Individu(neural_structure, lambda x: x)
+	individual.chromos = chromos
+	individual.weights = np.array(chromo_to_weights(chromos))
+	file.close()
+	return individual
 
 def main():
 

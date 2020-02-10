@@ -19,13 +19,13 @@ car_output :
   - velocity
 ---
 # fichier pour parametres du modèle
-n_indiv : 10
-hidden_layers : [10]
+n_indiv : 100
+hidden_layers : [5]
 linear_model : true
-n_epochs : 50
-mutation_start : 0.3
+n_epochs : 100
+mutation_start : 0.4
 mutation_stop : 0.05
-n_bests : 5 # n meilleurs individus pour la reproduction
+n_bests : 8 # n meilleurs individus pour la reproduction
 weights : [] # poids de chaque individu pour la reproduction
 
 ---

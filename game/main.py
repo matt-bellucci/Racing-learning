@@ -25,6 +25,7 @@ n_frames = 0
 # max_idle = 20
 save_path_gen = "."+sep+"gens"+sep
 save_path_models = "."+sep+"models"+sep
+save_path_figs = "."+sep+"gens"+sep+"figures"+sep
 neural_structure = model_params["neural_structure"]
 init_chromo = genetic.generate_chromos_from_struct(neural_structure)
 print(neural_structure)
@@ -64,6 +65,8 @@ def fit_function(indiv, model, max_frames=game_params["max_frames"]):
 
 # n_indivs = 100
 model = genetic.Genetic(model_params["n_indiv"], neural_structure, fit_function)
+# loaded_gen = genetic.load_gen(".\\gens\\04_02_2020-17_10_0.hdf5", fit_function)
+# model.generations = [loaded_gen]
 mutation_start = model_params["mutation_start"]
 mutation_stop = model_params["mutation_stop"]
 n_epochs = model_params["n_epochs"]
@@ -72,7 +75,29 @@ best_score = -1000.
 n_bests = model_params["n_bests"]
 # weights_off = [n_bests - (2*i/n_bests) for i in range(n_bests)]
 weights_off = model_params["weights"]
+scores = []
+
+def plot_scores(scores, filename):
+	means = []
+	maxs = []
+	mins = []
+	for gen in scores:
+		means.append(np.mean(gen))
+		maxs.append(np.max(gen))
+		mins.append(np.min(gen))
+	plt.figure()
+	plt.plot(means, label="Score moyen")
+	plt.plot(maxs, label="Score max")
+	plt.plot(mins, label="Score min")
+	plt.xlabel("Génération")
+	plt.ylabel("Score")
+	plt.legend()
+	plt.savefig(filename)
+
 for i in range(n_epochs):
+	filename_fig = save_path_figs + dt_string + "_gen_"+str(i)+".png"
+	if (i+1)%5==0:
+		plot_scores(scores, filename_fig)
 	print("===== Génération {} =====".format(i))
 	filename_g = save_path_gen + dt_string +"_"+ str(i)
 	filename_m = save_path_models + dt_string
@@ -82,16 +107,16 @@ for i in range(n_epochs):
 	 weights=weights_off)
 
 	last_gen = model.generations[-2]
-	best_scores = last_gen.best_scores(n_firsts=n_bests)
-	print("best scores = ", best_scores)
+	best_scores = last_gen.best_scores(n_firsts=last_gen.n_individus)
+	print("best scores = ", best_scores[:n_bests])
+	scores.append(best_scores)
 	if best_scores[0] >= best_score:
 		best_indiv = last_gen.individuals[last_gen.rank_fitness()[0]]
 		best_indiv.save_model(filename_m 
 			+ "_s_"+ str(int(best_indiv.fitness))+".hdf5")
 		last_gen.save_gen(filename_g+".hdf5")
 		best_score = best_scores[0]
-	# plt.hist([indiv.fitness for indiv in last_gen.individuals], 500)
-	# plt.show()
+	
 
 
 
