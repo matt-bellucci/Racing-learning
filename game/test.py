@@ -4,23 +4,27 @@ class A:
 	def __init__(self):
 		self.attr = 0.
 
-# Illustration copy.deepcopy
-print("===Illustration copy.deepcopy===")
+# copy.deepcopy
+print("=== copy.deepcopy ===")
 print()
 a = A()
 b = copy.deepcopy(a)
-print("Difference adresse attribut sans changer b.attr : {}".format(id(a.attr)-id(b.attr)))
+print("Address difference between a.attr and b.attr : {}".format(id(a.attr)-id(b.attr)))
+# Same addresses
 b.attr = 0.
-print("Difference adresse attribut après changement b.attr : {}".format(id(a.attr)-id(b.attr)))
+print("Address difference between after reassigning b.attr : {}".format(id(a.attr)-id(b.attr)))
+# Different addresses
 
-
-# Illustration constructeur
-print("===Illustration constructeur===")
+# Constructor
+print()
+print("=== Constructor ===")
 print()
 a = A()
 b = A()
-print("Difference adresse attribut : {}".format(id(a.attr)-id(b.attr)))
-print("Difference adresse instances : {}".format(id(a)-id(b)))
+print("Address difference attributes : {}".format(id(a.attr)-id(b.attr)))
+# Same addresses
+print("Address difference instances : {}".format(id(a)-id(b)))
+# Different addresses
 
 class B:
 	def __init__(self):
@@ -28,7 +32,10 @@ class B:
 
 a = B()
 b = B()
-print("=Initialisation aléatoire=")
 print()
-print("Difference adresse attribut : {}".format(id(a.attr)-id(b.attr)))
-print("Difference adresse instances : {}".format(id(a)-id(b)))
+print("=== random init ===")
+print()
+print("Address difference attributes : {}".format(id(a.attr)-id(b.attr)))
+# Different addresses
+print("Address difference instances : {}".format(id(a)-id(b)))
+# Different addresses
