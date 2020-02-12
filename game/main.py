@@ -26,6 +26,7 @@ n_frames = 0
 save_path_gen = "."+sep+"gens"+sep
 save_path_models = "."+sep+"models"+sep
 save_path_figs = "."+sep+"gens"+sep+"figures"+sep
+print(save_path_gen)
 neural_structure = model_params["neural_structure"]
 init_chromo = genetic.generate_chromos_from_struct(neural_structure)
 print(neural_structure)
@@ -63,7 +64,6 @@ def fit_function(indiv, model, max_frames=game_params["max_frames"]):
 	print(score)
 	return score
 
-# n_indivs = 100
 model = genetic.Genetic(model_params["n_indiv"], neural_structure, fit_function)
 # loaded_gen = genetic.load_gen(".\\gens\\04_02_2020-17_10_0.hdf5", fit_function)
 # model.generations = [loaded_gen]
@@ -75,6 +75,7 @@ best_score = -1000.
 n_bests = model_params["n_bests"]
 # weights_off = [n_bests - (2*i/n_bests) for i in range(n_bests)]
 weights_off = model_params["weights"]
+keep_n_bests = model_params["keep_n_bests"]
 scores = []
 
 def plot_scores(scores, filename):
@@ -89,7 +90,7 @@ def plot_scores(scores, filename):
 	plt.plot(means, label="Score moyen")
 	plt.plot(maxs, label="Score max")
 	plt.plot(mins, label="Score min")
-	plt.xlabel("Génération")
+	plt.xlabel("Generation")
 	plt.ylabel("Score")
 	plt.legend()
 	plt.savefig(filename)
@@ -98,13 +99,13 @@ for i in range(n_epochs):
 	filename_fig = save_path_figs + dt_string + "_gen_"+str(i)+".png"
 	if (i+1)%5==0:
 		plot_scores(scores, filename_fig)
-	print("===== Génération {} =====".format(i))
+	print("===== Generation {} =====".format(i))
 	filename_g = save_path_gen + dt_string +"_"+ str(i)
 	filename_m = save_path_models + dt_string
 	mutation_chance = mutation_start + i*mutation_decay
 	print("epsilon = ", mutation_chance)
 	gen = model.train(mutation_chance=mutation_chance, n_bests=n_bests,
-	 weights=weights_off)
+	 weights=weights_off, keep_n_bests=keep_n_bests)
 
 	last_gen = model.generations[-2]
 	best_scores = last_gen.best_scores(n_firsts=last_gen.n_individus)

@@ -1,3 +1,4 @@
+# -*-coding:Latin-1 -*
 import numpy as np
 import copy
 import os
@@ -334,24 +335,29 @@ class Genetic:
 		return new_indiv
 
 
-	def train(self, n_bests=2, weights=None, mutation_chance=0.25):
+	def train(self, n_bests=2, weights=None, mutation_chance=0.25, keep_n_bests=1):
 		if n_bests < 2:
 			n_bests = 2
+		if keep_n_bests >= self.n_individus:
+			keep_n_bests = n_individus - 1
 		current_gen = self.generations[-1] # derniere generation
 		print("Fit population")
 		current_gen.fit(self.model)
 		print("Fit ended")
 		fitness_ranks = np.array(current_gen.rank_fitness())
-		n_fittest = np.array(current_gen.individuals)[fitness_ranks[:n_bests]]
+		n_fittest = np.array(current_gen.individuals)[fitness_ranks]
 		parents = [i for i in combinations(n_fittest[:n_bests], 2)] # toutes les paires possibles de parents, sans 2 fois le meme
 		# la paire avec les meilleures parents est la premiere paire, puis qualite decroissante
 		
 		if not weights or len(weights) != n_bests:
 			weights = np.ones(n_bests)	
 		weights_per_couple = get_weights_per_couple(weights, n_bests)
-		offspring_per_couple = get_offspring_per_couple(weights_per_couple, self.n_individus)
+		offspring_per_couple = get_offspring_per_couple(weights_per_couple, self.n_individus - keep_n_bests)
 		print(offspring_per_couple)
-		new_gen = []
+		new_gen = n_fittest[:keep_n_bests].tolist()
+		print(new_gen)
+		print([ind.fitness for ind in new_gen])
+		
 		for i, couple in enumerate(parents):
 			offsprings = []
 			for j in range(offspring_per_couple[i]):

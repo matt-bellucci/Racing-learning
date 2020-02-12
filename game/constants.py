@@ -9,7 +9,7 @@ PARAMS_FILE = "params.yaml"
 def load_params(file):
 
 	stream = open(file, 'r')
-	dictionnary = list(yaml.load_all(stream, Loader=yaml.FullLoader))
+	dictionnary = list(yaml.load_all(stream))
 	game_params = dictionnary[0]
 	model_params = dictionnary[1]
 	reward_params = dictionnary[2]

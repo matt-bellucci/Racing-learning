@@ -47,7 +47,7 @@ def onCheckpoint(position, circuit, checkpointColor=GREEN):
 def take_decision(decision):
 	"""
 	Liste de sortie du reseau de chaque individu
-	Si avancer > freiner alors on ne garde que avancer normalisé a 1
+	Si avancer > freiner alors on ne garde que avancer normalise a 1
 	De meme pour gauche/droite
 
 	Cela permet a l'algo genetique de ne pas avoir a donner de valeurs exactes et facilite l'apprentissage
