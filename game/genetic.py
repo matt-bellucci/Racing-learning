@@ -281,7 +281,7 @@ def get_weights_per_couple(weights_per_parent, n_parents):
 	parent 2.
 	On normalise ensuite tous ces poids pour avoir somme(poids) = 1
 	
-	Args :
+	Args:
 		weights_per_parent (list(float)) : les poids attribues a chaque parent
 					pas necessairement normalise
 		n_parents (int) : le nombre de parents
@@ -295,10 +295,34 @@ def get_weights_per_couple(weights_per_parent, n_parents):
 	return weights_per_couple
 
 def get_offspring_per_couple(weights_per_couple, n_individus):
+	"""Donne le nombre d'enfants par couple
+	Renvoie le nombre d'enfants par couple en se basant sur les poids
+	d'importance calcules par get_weights_per_couple.
+	La fonction n'est pas encore parfaite car il est possible que 
+	certains couples n'aient pas du tout d'enfants car ils sont
+	parmi les moins importants. Pour contourner ce probleme, 
+	il suffit de donner la meme importance a tous les couples.
+
+	Args:
+		weights_per_couple (list(float)): liste des poids d'importance 
+									normalises, issu de get_weights_per_couple
+		n_individus (int) : le nombre d'enfants a generer
+
+	Returns:
+		list(int) : le nombre d'enfants par couple
+		
+	"""
+
+	# somme(poids) = 1 donc somme(poids*n_individus) proche de n_individus
+	# on utilise cette logique en s'assurant que l'on ne depasse pas
+	# n_individus. Si c'est le cas, on passe a 0 et on arrete la fonction
 	offspring_per_couple = []
 	count = 0
 	for w in weights_per_couple:
+		# calcul du nombre d'enfants pour ce couple: poids*n_indiv
 		n_offspring = int(np.ceil(w*n_individus))
+		# si trop d'individus, on enleve jusqu'a arrive au nombre
+		# maximum autorise
 		if count + n_offspring >= n_individus:
 			n_offspring = n_individus - count
 			offspring_per_couple.append(n_offspring)
@@ -311,12 +335,17 @@ def get_offspring_per_couple(weights_per_couple, n_individus):
 
 
 def crossover(indiv1, indiv2, new_indiv):
+	"""Melange les genes des deux parents pour creer un enfant
+	Genere un entier aleatoire qui definit l'endroit de croisement entre
+	les genes du parent 1 et ceux du parent 2, pour chaque chromosome.
+	Args:
+		indiv1, indiv2 (Individu): Individus parents
+		new_indiv (Individu) : futur enfant instancie avant pour eviter les problemes memoire
+
+	Returns:
+		new_indiv (Individu) : l'enfant avec les genes modifies
 	"""
-	indiv1, indiv2 : Individus parents
-	new_indiv : Enfant
-	On prend une partie des genes du premier parent jusqu'a un point aleatoire, puis on prend
-	les genes du 2e parent apres ce point.
-	"""
+
 	for i, layer_chromos in enumerate(new_indiv.chromos):
 		for j, chromo in enumerate(layer_chromos):
 			crossover_point = np.random.randint(len(chromo.genes)) # point ou l'on prend les genes de l'autre individu
@@ -326,7 +355,18 @@ def crossover(indiv1, indiv2, new_indiv):
 	return new_indiv
 
 def mutation(new_indiv, chance=0.25):
+	"""Applique la phase de mutation pour un individu
+	Pour chaque chromosome, si la decision de muter est prise, 
+	on choisit un gene au hasard dans ce chromosome et on le mute.
 
+	Args:
+		new_indiv (Individu): individu a muter
+		chance (float): proba de mutation, entre 0 et 1
+
+	Returns:
+		new_indiv (Individu): individu apres mutation
+
+	"""
 	# plusieurs choix d'implementation, mutation chromosome par chromosome ou sur un gene parmi tous
 	# ici on fera chromosome par chromosome
 	for layer_chromos in new_indiv.chromos:
