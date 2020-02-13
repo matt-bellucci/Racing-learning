@@ -226,11 +226,11 @@ class Population:
 
 
 	def fit(self, model):
-	"""Calcul du score pour chaque individu de la population
-	On utilise le meme modele neuronal pour tous les individus
-	en changeant uniquement ce poids, ce qui est gere directement
-	par l'individu
-	"""
+		"""Calcul du score pour chaque individu de la population
+		On utilise le meme modele neuronal pour tous les individus
+		en changeant uniquement ce poids, ce qui est gere directement
+		par l'individu
+		"""
 		for i in range(len(self.individuals)):
 			print(str(i+1)+"/"+str(len(self.individuals)))
 			self.individuals[i].update_fitness(model)
