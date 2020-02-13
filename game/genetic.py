@@ -169,6 +169,11 @@ class Individu:
 		self.neural_structure = neural_structure
 
 	def update_fitness(self, model):
+		"""
+		Change les poids du modele general pour y mettre les poids
+		de l'individu puis lance la fit_function pour determiner le score
+		de l'individu
+		"""
 		model.set_weights(self.weights)
 		self.fitness = self.fit_function(self, model)
 
@@ -185,6 +190,9 @@ class Individu:
 		return new
 
 	def save_model(self, filename):
+		"""
+		Sauvegarde des poids de l'individu
+		"""
 		file = h5py.File(filename, 'w')
 		file.create_dataset(name="neural_structure", data=self.neural_structure)
 		grp = file.create_group("weights")
@@ -198,17 +206,18 @@ class Individu:
 
 class Population:
 	"""Ensemble d'individus d'une même espèce
-	La classe Population 
-
-
+	La classe Population contient un tableau d'Individu
+	et est capable de generer des Individu de la meme espece.
 	"""
 	def __init__(self, n_individus, neural_structure, fit_function, individuals=None):
 		self.individuals = list()
+		# si individuals est None, generation d'individus
+		# sinon, si il y a trop ou pas asser d'individus dans individuals
+		# on les genere aussi
 		if not individuals or len(individuals) != n_individus:
 			for i in range(n_individus):
 				indiv = Individu(neural_structure, fit_function)
 				self.individuals.append(indiv.copy())
-				# print(hex(id(self.individuals)))
 		else:
 			self.individuals = np.array(individuals)
 
@@ -217,24 +226,38 @@ class Population:
 
 
 	def fit(self, model):
+	"""Calcul du score pour chaque individu de la population
+	On utilise le meme modele neuronal pour tous les individus
+	en changeant uniquement ce poids, ce qui est gere directement
+	par l'individu
+	"""
 		for i in range(len(self.individuals)):
 			print(str(i+1)+"/"+str(len(self.individuals)))
 			self.individuals[i].update_fitness(model)
 
 	def rank_fitness(self):
+		"""
+		Donne les indices des meilleurs individus
+		tries dans l'ordre decroissant de score
+		"""
 		fitness = [indiv.fitness for indiv in self.individuals]
 		sort = np.argsort(fitness)[::-1]
 		return sort
 
 	def best_scores(self, n_firsts=1):
+		"""Affiche les scores des n meilleurs individus
+		"""
 		rank = np.array(self.rank_fitness())
 		n_firsts = min(n_firsts, self.n_individus)
-		# print("n_firsts = ", n_firsts)
-		# print("rank= ", rank)
 		sorted_indiv = np.array(self.individuals)[rank]
 		return [indiv.fitness for indiv in sorted_indiv[:n_firsts]]
 
 	def save_gen(self, filename):
+		"""Sauvegarde des modeles de tous les individus de la population
+		La sauvegarde se fait dans un fichier h5py avec les caracteristiques
+		du reseau, le nombre d'individus, puis les poids de chaque individu dans un
+		sous-groupe du fichier h5py
+		"""
 		file = h5py.File(filename, 'w')
 		file.create_dataset(name="n_individus", data=self.n_individus)
 		file.create_dataset(name="neural_structure", data=self.structure)
@@ -251,6 +274,21 @@ class Population:
 
 
 def get_weights_per_couple(weights_per_parent, n_parents):
+	"""Normalise les poids d'importance de chaque parents
+	Les poids d'importance vont definir le nombre d'individus engendres par chaque parent.
+	Plus un parent a un poids fort, plus il aura d'enfants. On calcule ensuite le poids
+	d'importance par couple en multipliant simplement le poids du parent 1 par le poids du
+	parent 2.
+	On normalise ensuite tous ces poids pour avoir somme(poids) = 1
+	
+	Args :
+		weights_per_parent (list(float)) : les poids attribues a chaque parent
+					pas necessairement normalise
+		n_parents (int) : le nombre de parents
+	
+	Returns:
+		list(float) : liste des poids d'importance pour chaque couple, normalisee
+	"""
 	idx_combi = [i for i in combinations(np.arange(n_parents), 2)]
 	weights_per_couple = [weights_per_parent[p[0]]*weights_per_parent[p[1]] for p in idx_combi]
 	weights_per_couple = np.array(weights_per_couple)/np.sum(weights_per_couple)
